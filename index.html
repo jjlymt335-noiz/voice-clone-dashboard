@@ -383,7 +383,7 @@
         <!-- 趋势图 -->
         <div class="section">
             <div class="section-title" style="justify-content: space-between;">
-                <span>近14天趋势</span>
+                <span>趋势变化（近14天）</span>
                 <div class="view-toggle">
                     <button class="toggle-btn active" data-view="absolute" onclick="setTrendView('absolute')">绝对数量</button>
                     <button class="toggle-btn" data-view="percentage" onclick="setTrendView('percentage')">比例视图</button>
@@ -636,7 +636,8 @@
                     name: eventLabel,
                     type: 'line',
                     smooth: true,
-                    data: seriesData
+                    data: seriesData,
+                    areaStyle: { opacity: 0.3 }
                 };
             });
 
