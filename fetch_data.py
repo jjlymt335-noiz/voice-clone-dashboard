@@ -312,19 +312,11 @@ def get_deep_metrics(period='近7天'):
 
     return metrics
 
-def get_trend_data(period='近7天'):
-    """获取趋势数据"""
+def get_trend_data():
+    """获取14天趋势数据"""
     today = datetime.now()
-
-    if period == '昨天':
-        days = 1
-    elif period == '近3天':
-        days = 3
-    else:
-        days = 7
-
     end_date = today - timedelta(days=1)
-    start_date = today - timedelta(days=days)
+    start_date = today - timedelta(days=14)
     date_condition = f"_TABLE_SUFFIX BETWEEN '{start_date.strftime('%Y%m%d')}' AND '{end_date.strftime('%Y%m%d')}'"
 
     query = f"""
@@ -379,8 +371,9 @@ def main():
         print(f"  - 深度指标...")
         all_data['deep_metrics'][period] = get_deep_metrics(period)
 
-        print(f"  - 趋势数据...")
-        all_data['trends'][period] = get_trend_data(period)
+    # 趋势数据固定14天
+    print(f"\n获取 14天趋势数据...")
+    all_data['trends'] = get_trend_data()
 
     # 保存数据
     output_path = os.path.join(SCRIPT_DIR, 'data', 'dashboard_data.json')

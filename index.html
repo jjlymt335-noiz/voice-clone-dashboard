@@ -383,7 +383,7 @@
         <!-- 趋势图 -->
         <div class="section">
             <div class="section-title" style="justify-content: space-between;">
-                <span>趋势变化</span>
+                <span>近14天趋势</span>
                 <div class="view-toggle">
                     <button class="toggle-btn active" data-view="absolute" onclick="setTrendView('absolute')">绝对数量</button>
                     <button class="toggle-btn" data-view="percentage" onclick="setTrendView('percentage')">比例视图</button>
@@ -440,7 +440,6 @@
                 btn.classList.toggle('active', btn.dataset.period === period);
             });
             renderFunnel();
-            renderTrend();
         }
 
         // 切换深度指标时间周期
@@ -606,9 +605,9 @@
             });
         }
 
-        // 渲染趋势图
+        // 渲染趋势图（固定14天）
         function renderTrend() {
-            const trendData = dashboardData.trends[currentPeriod] || {};
+            const trendData = dashboardData.trends || {};
             const dates = Object.keys(trendData).sort();
 
             const eventNames = {
