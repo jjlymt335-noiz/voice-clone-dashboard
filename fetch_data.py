@@ -223,30 +223,22 @@ def get_deep_metrics(period='近7天'):
     date_condition = get_date_condition(period)
     metrics = {}
 
-    # 1. 完成率 = 保存音色用户 / 曝光用户
+    # 1. 完成率 = 保存音色次数 / 曝光次数
     query_completion = f"""
-    WITH exposure_users AS (
-        SELECT COUNT(DISTINCT user_pseudo_id) as users
-        FROM `noiz-430406.analytics_510746763.events_intraday_*`
-        WHERE {date_condition}
-            AND event_name = 'page_voice_clone_exposure'
-    ),
-    save_users AS (
-        SELECT COUNT(DISTINCT user_pseudo_id) as users
-        FROM `noiz-430406.analytics_510746763.events_intraday_*`
-        WHERE {date_condition}
-            AND event_name = 'voice_clone_save_success'
-    )
     SELECT
-        (SELECT users FROM exposure_users) as exposure_users,
-        (SELECT users FROM save_users) as save_users
+        (SELECT COUNT(*) FROM `noiz-430406.analytics_510746763.events_intraday_*`
+         WHERE {date_condition} AND event_name = 'page_voice_clone_exposure') as exposure_count,
+        (SELECT COUNT(*) FROM `noiz-430406.analytics_510746763.events_intraday_*`
+         WHERE {date_condition} AND event_name = 'voice_clone_save_success') as save_count
     """
 
     completion_result = list(client.query(query_completion).result())[0]
+    exp_count = completion_result.exposure_count or 0
+    save_count = completion_result.save_count or 0
     metrics['completion'] = {
-        'exposure_users': completion_result.exposure_users or 0,
-        'save_users': completion_result.save_users or 0,
-        'rate': round((completion_result.save_users or 0) / (completion_result.exposure_users or 1) * 100, 2)
+        'exposure_count': exp_count,
+        'save_count': save_count,
+        'count_rate': round(save_count / (exp_count or 1) * 100, 2)
     }
 
     # 2. 保存后使用：保存音色后去TTS使用的用户占比
@@ -282,32 +274,17 @@ def get_deep_metrics(period='近7天'):
         'count_rate': round((tts_result.use_tts_count or 0) / (tts_result.save_count or 1) * 100, 2)
     }
 
-    # 3. 付费转化：upgrade_click 并付费
+    # 3. 付费转化：upgrade_click 次数
     query_upgrade = f"""
-    WITH upgrade_click_users AS (
-        SELECT DISTINCT user_pseudo_id
-        FROM `noiz-430406.analytics_510746763.events_intraday_*`
-        WHERE {date_condition}
-            AND event_name = 'voice_clone_upgrade_click'
-    ),
-    paid_users AS (
-        SELECT DISTINCT user_pseudo_id
-        FROM `noiz-430406.analytics_510746763.events_intraday_*`
-        WHERE {date_condition}
-            AND event_name IN ('purchase', 'in_app_purchase', 'subscription_purchase')
-    )
-    SELECT
-        (SELECT COUNT(*) FROM upgrade_click_users) as upgrade_click_users,
-        COUNT(*) as upgrade_and_paid_users
-    FROM upgrade_click_users u
-    JOIN paid_users p ON u.user_pseudo_id = p.user_pseudo_id
+    SELECT COUNT(*) as upgrade_click_count
+    FROM `noiz-430406.analytics_510746763.events_intraday_*`
+    WHERE {date_condition}
+        AND event_name = 'voice_clone_upgrade_click'
     """
 
     upgrade_result = list(client.query(query_upgrade).result())[0]
     metrics['upgrade_conversion'] = {
-        'upgrade_click_users': upgrade_result.upgrade_click_users or 0,
-        'upgrade_and_paid_users': upgrade_result.upgrade_and_paid_users or 0,
-        'rate': round((upgrade_result.upgrade_and_paid_users or 0) / (upgrade_result.upgrade_click_users or 1) * 100, 2)
+        'upgrade_click_count': upgrade_result.upgrade_click_count or 0
     }
 
     return metrics
@@ -323,7 +300,7 @@ def get_trend_data():
     SELECT
         FORMAT_DATE('%m-%d', PARSE_DATE('%Y%m%d', event_date)) as date,
         event_name,
-        COUNT(DISTINCT user_pseudo_id) as unique_users
+        COUNT(*) as event_count
     FROM `noiz-430406.analytics_510746763.events_intraday_*`
     WHERE {date_condition}
         AND event_name IN (
@@ -342,7 +319,7 @@ def get_trend_data():
     for row in results:
         if row.date not in trend_data:
             trend_data[row.date] = {}
-        trend_data[row.date][row.event_name] = row.unique_users
+        trend_data[row.date][row.event_name] = row.event_count
 
     return trend_data
 

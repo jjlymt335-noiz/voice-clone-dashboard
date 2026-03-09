@@ -474,48 +474,48 @@
                 { step: 5, name: '离开页面', key: 'exit_page', isComposite: true }
             ];
 
-            const firstStepUsers = data['page_voice_clone_exposure']?.users || 0;
+            const firstStepCount = data['page_voice_clone_exposure']?.count || 0;
 
             // 漏斗图数据
             const funnelData = steps.map(step => ({
-                name: step.name,
-                value: data[step.key]?.users || 0
+                name: `${step.name}\n${(data[step.key]?.count || 0).toLocaleString()}`,
+                value: data[step.key]?.count || 0
             }));
 
             // 详情列表
             const detailsHtml = [];
-            let prevUsers = 0;
+            let prevCount = 0;
 
             steps.forEach((step, index) => {
                 const stepData = data[step.key] || { count: 0, users: 0 };
                 const users = stepData.users;
                 const count = stepData.count;
 
-                const stepRate = index === 0 ? '100%' : (prevUsers > 0 ? ((users / prevUsers) * 100).toFixed(1) + '%' : '0%');
-                const overallRate = firstStepUsers > 0 ? ((users / firstStepUsers) * 100).toFixed(1) + '%' : '0%';
+                const stepRate = index === 0 ? '100%' : (prevCount > 0 ? ((count / prevCount) * 100).toFixed(1) + '%' : '0%');
+                const overallRate = firstStepCount > 0 ? ((count / firstStepCount) * 100).toFixed(1) + '%' : '0%';
 
                 let detailInfo = '';
 
                 // 步骤2：克隆声音添加 - 按来源分布
                 if (step.key === 'voice_clone_add_voice_click') {
                     const addFrom = stepDetails.add_voice_from || {};
-                    const fromCreation = addFrom['/tts/creation'] || { users: 0 };
-                    const fromLib = addFrom['/voice/lib'] || { users: 0 };
-                    const totalFrom = fromCreation.users + fromLib.users;
+                    const fromCreation = addFrom['/tts/creation'] || { count: 0 };
+                    const fromLib = addFrom['/voice/lib'] || { count: 0 };
+                    const totalFrom = fromCreation.count + fromLib.count;
                     detailInfo = `
                         <div class="step-detail-breakdown">
-                            <div>从 Creation: ${fromCreation.users.toLocaleString()} 人 (${totalFrom ? ((fromCreation.users/totalFrom)*100).toFixed(1) : 0}%)</div>
-                            <div>从 Library: ${fromLib.users.toLocaleString()} 人 (${totalFrom ? ((fromLib.users/totalFrom)*100).toFixed(1) : 0}%)</div>
+                            <div>从 Creation: ${fromCreation.count.toLocaleString()} 次 (${totalFrom ? ((fromCreation.count/totalFrom)*100).toFixed(1) : 0}%)</div>
+                            <div>从 Library: ${fromLib.count.toLocaleString()} 次 (${totalFrom ? ((fromLib.count/totalFrom)*100).toFixed(1) : 0}%)</div>
                         </div>
                     `;
                 }
 
                 // 步骤3：试听 - 手动选择片段
                 if (step.key === 'voice_clone_preview_listen_play_click') {
-                    const manualSelect = stepDetails.manual_select || { users: 0 };
+                    const manualSelect = stepDetails.manual_select || { count: 0 };
                     detailInfo = `
                         <div class="step-detail-breakdown">
-                            <div>手动选择片段: ${manualSelect.users.toLocaleString()} 人 (${users ? ((manualSelect.users/users)*100).toFixed(1) : 0}%)</div>
+                            <div>手动选择片段: ${manualSelect.count.toLocaleString()} 次 (${count ? ((manualSelect.count/count)*100).toFixed(1) : 0}%)</div>
                         </div>
                     `;
                 }
@@ -523,13 +523,13 @@
                 // 步骤5：离开页面分布
                 if (step.key === 'exit_page') {
                     const exitDist = stepDetails.exit_distribution || {};
-                    const useData = exitDist['voice_clone_save_voice_use'] || { users: 0 };
-                    const backData = exitDist['voice_clone_complete_back'] || { users: 0 };
-                    const totalExit = useData.users + backData.users;
+                    const useData = exitDist['voice_clone_save_voice_use'] || { count: 0 };
+                    const backData = exitDist['voice_clone_complete_back'] || { count: 0 };
+                    const totalExit = useData.count + backData.count;
                     detailInfo = `
                         <div class="step-detail-breakdown">
-                            <div>Use (去TTS): ${useData.users.toLocaleString()} 人 (${totalExit ? ((useData.users/totalExit)*100).toFixed(1) : 0}%)</div>
-                            <div>Back (回Library): ${backData.users.toLocaleString()} 人 (${totalExit ? ((backData.users/totalExit)*100).toFixed(1) : 0}%)</div>
+                            <div>Use (去TTS): ${useData.count.toLocaleString()} 次 (${totalExit ? ((useData.count/totalExit)*100).toFixed(1) : 0}%)</div>
+                            <div>Back (回Library): ${backData.count.toLocaleString()} 次 (${totalExit ? ((backData.count/totalExit)*100).toFixed(1) : 0}%)</div>
                         </div>
                     `;
                 }
@@ -545,12 +545,12 @@
                         <div class="step-metrics">
                             <div class="step-metrics-row">
                                 <div class="step-metric-col">
-                                    <div class="step-metric-label">去重用户数</div>
-                                    <div class="step-metric-value users">${users.toLocaleString()}</div>
-                                </div>
-                                <div class="step-metric-col">
                                     <div class="step-metric-label">事件触发次数</div>
                                     <div class="step-metric-value count">${count.toLocaleString()}</div>
+                                </div>
+                                <div class="step-metric-col">
+                                    <div class="step-metric-label">去重用户数</div>
+                                    <div class="step-metric-value users">${users.toLocaleString()}</div>
                                 </div>
                             </div>
                             <div class="step-rate">上步转化 ${stepRate}</div>
@@ -559,7 +559,7 @@
                     </div>
                 `);
 
-                prevUsers = users;
+                prevCount = count;
             });
 
             document.getElementById('funnelDetails').innerHTML = detailsHtml.join('');
@@ -569,7 +569,7 @@
             chart.setOption({
                 tooltip: {
                     trigger: 'item',
-                    formatter: '{b}: {c} 人'
+                    formatter: '{b}'
                 },
                 series: [{
                     type: 'funnel',
@@ -586,7 +586,7 @@
                     label: {
                         show: true,
                         position: 'inside',
-                        formatter: '{b}\n{c}',
+                        formatter: '{b}',
                         color: '#fff',
                         fontSize: 12
                     },
@@ -648,7 +648,7 @@
                     formatter: function(params) {
                         let result = params[0].axisValue + '<br/>';
                         params.forEach(param => {
-                            const suffix = trendView === 'percentage' ? '%' : ' 人';
+                            const suffix = trendView === 'percentage' ? '%' : ' 次';
                             result += `${param.marker} ${param.seriesName}: ${param.value}${suffix}<br/>`;
                         });
                         return result;
@@ -684,7 +684,7 @@
             });
 
             document.getElementById('trendFooter').textContent =
-                trendView === 'percentage' ? '* 比例视图：各步骤相对于曝光的百分比' : '* 绝对数量视图：去重用户数';
+                trendView === 'percentage' ? '* 比例视图：各步骤相对于曝光的百分比' : '* 绝对数量视图：事件触发次数';
         }
 
         // 渲染深度指标
@@ -699,10 +699,10 @@
                 <div class="metric-group">
                     <div class="metric-group-title">完成率</div>
                     <div class="metric-item">
-                        <div class="metric-name">保存音色用户 / 曝光用户</div>
+                        <div class="metric-name">保存音色次数 / 曝光次数</div>
                         <div class="metric-value-row">
-                            <div class="metric-main-value">${completion.rate || 0}%</div>
-                            <div class="metric-sub-value">${(completion.save_users || 0).toLocaleString()} / ${(completion.exposure_users || 0).toLocaleString()}</div>
+                            <div class="metric-main-value">${completion.count_rate || 0}%</div>
+                            <div class="metric-sub-value">${(completion.save_count || 0).toLocaleString()} / ${(completion.exposure_count || 0).toLocaleString()} 次</div>
                         </div>
                     </div>
                 </div>
@@ -710,10 +710,10 @@
                 <div class="metric-group">
                     <div class="metric-group-title">保存后使用</div>
                     <div class="metric-item">
-                        <div class="metric-name">保存后去 TTS 使用的用户占比</div>
+                        <div class="metric-name">保存后去 TTS 使用的次数占比</div>
                         <div class="metric-value-row">
-                            <div class="metric-main-value">${saveToUse.user_rate || 0}%</div>
-                            <div class="metric-sub-value">${(saveToUse.use_tts_users || 0).toLocaleString()} / ${(saveToUse.save_users || 0).toLocaleString()} 用户</div>
+                            <div class="metric-main-value">${saveToUse.count_rate || 0}%</div>
+                            <div class="metric-sub-value">${(saveToUse.use_tts_count || 0).toLocaleString()} / ${(saveToUse.save_count || 0).toLocaleString()} 次</div>
                         </div>
                     </div>
                 </div>
@@ -721,9 +721,9 @@
                 <div class="metric-group">
                     <div class="metric-group-title">付费转化</div>
                     <div class="metric-item">
-                        <div class="metric-name">点击升级弹窗的用户数</div>
+                        <div class="metric-name">点击升级弹窗次数</div>
                         <div class="metric-value-row">
-                            <div class="metric-main-value">${(upgrade.upgrade_click_users || 0).toLocaleString()}</div>
+                            <div class="metric-main-value">${(upgrade.upgrade_click_count || 0).toLocaleString()} 次</div>
                             <div class="metric-sub-value">voice_clone_upgrade_click</div>
                         </div>
                     </div>
